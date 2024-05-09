@@ -2,7 +2,8 @@ const express = require('express')
 const cors = require('cors')
 const {
     MongoClient,
-    ServerApiVersion
+    ServerApiVersion,
+    ObjectId
 } = require('mongodb')
 const app = express()
 const port = process.env.PORT || 5000
@@ -33,6 +34,7 @@ async function run() {
     try {
 
         const jobCollection = client.db('skilledCourse').collection('jobs');
+        const bidCollection = client.db('skilledCourse').collection('bids');
 
 
         // To get add Job data in URL
@@ -42,7 +44,35 @@ async function run() {
             res.send(result);
         })
 
-        
+        // To get bid data in url
+        app.get('/bids', async (req, res) => {
+            const result = await bidCollection.find().toArray()
+
+            res.send(result)
+        })
+
+        // For CardDetails and Bid Requiest
+        app.get('/bids/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            };
+
+            const result = await bidCollection.findOne(query)
+            res.send(result)
+        })
+
+        // For My bid 
+        app.get('/jobs/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            };
+
+            const result = await jobCollection.findOne(query)
+            res.send(result)
+        })
+
         // To get Add Job Data in dataBase from client-addSec
         app.post('/job', async (req, res) => {
             const jobData = req.body;
@@ -51,6 +81,44 @@ async function run() {
             res.send(result)
         })
 
+        // Post To get a bids data from client side
+        app.post('/bids', async (req, res) => {
+            const bidData = req.body;
+
+            const result = await bidCollection.insertOne(bidData)
+            res.send(result)
+        })
+
+        // Update My Bid Option
+        app.put('/bids/:id', async (req, res) => {
+            const id = req.params.id;
+            const bidData = req.body;
+            const query = {
+                _id: new ObjectId(id)
+            }
+            const options = {
+                upsert: true
+            }
+            const updateDoc = {
+                $set: {
+                    ...bidData
+                }
+            }
+
+            const result = await bidCollection.updateOne( query , updateDoc, options)
+            res.send(result)
+        })
+
+        // Delete My Bid option
+        app.delete('/bids/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = {
+                _id: new ObjectId(id)
+            };
+
+            const result = await bidCollection.deleteOne(query)
+            res.send(result)
+        })
 
 
         // Connect the client to the server	(optional starting in v4.7)
